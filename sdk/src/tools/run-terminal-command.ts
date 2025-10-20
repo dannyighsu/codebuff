@@ -2,7 +2,13 @@ import { spawn } from 'child_process'
 import * as os from 'os'
 import * as path from 'path'
 
+import {
+  stripColors,
+  truncateStringWithMessage,
+} from '../../../common/src/util/string'
 import type { CodebuffToolOutput } from '../../../common/src/tools/list'
+
+const COMMAND_OUTPUT_LIMIT = 50_000
 
 export function runTerminalCommand({
   command,
@@ -75,11 +81,24 @@ export function runTerminalCommand({
         clearTimeout(timer)
       }
 
+      // Truncate stdout to prevent excessive output
+      const truncatedStdout = truncateStringWithMessage({
+        str: stripColors(stdout),
+        maxLength: COMMAND_OUTPUT_LIMIT,
+        remove: 'MIDDLE',
+      })
+
+      const truncatedStderr = truncateStringWithMessage({
+        str: stripColors(stderr),
+        maxLength: COMMAND_OUTPUT_LIMIT,
+        remove: 'MIDDLE',
+      })
+
       // Include stderr in stdout for compatibility with existing behavior
       const combinedOutput = {
         command,
-        stdout,
-        ...(stderr ? { stderr } : {}),
+        stdout: truncatedStdout,
+        ...(truncatedStderr ? { stderr: truncatedStderr } : {}),
         ...(exitCode !== null ? { exitCode } : {}),
       }
 

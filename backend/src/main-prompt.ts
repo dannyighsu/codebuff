@@ -1,3 +1,4 @@
+import { getAgentTemplate } from '@codebuff/agent-runtime/templates/agent-registry'
 import { expireMessages } from '@codebuff/agent-runtime/util/messages'
 import { AgentTemplateTypes } from '@codebuff/common/types/session-state'
 import { generateCompactId } from '@codebuff/common/util/string'
@@ -5,7 +6,6 @@ import { uniq } from 'lodash'
 
 import { checkTerminalCommand } from './check-terminal-command'
 import { loopAgentSteps } from './run-agent-step'
-import { getAgentTemplate } from './templates/agent-registry'
 
 import type { AgentTemplate } from '@codebuff/agent-runtime/templates/types'
 import type { ClientAction } from '@codebuff/common/actions'
@@ -151,7 +151,12 @@ export const mainPrompt = async (
   mainAgentTemplate.spawnableAgents = updatedSubagents
   localAgentTemplates[agentType] = mainAgentTemplate
 
-  if (prompt && mainAgentTemplate.toolNames.includes('run_terminal_command')) {
+  // TODO (fat sdk): remove this once we switch to sdk-only
+  if (
+    prompt &&
+    mainAgentTemplate.toolNames.includes('run_terminal_command') &&
+    !fingerprintId.startsWith('codebuff-sdk-')
+  ) {
     // Check if this is a direct terminal command
     const startTime = Date.now()
     const terminalCommand = await checkTerminalCommand({
